@@ -418,10 +418,12 @@
         player.playVideo();
     });
 
-    // Speed stepper: minus/plus move in 0.25 steps between 0.5x-1.5x,
-    // the center button both shows the current speed and resets to normal.
-    const speedSteps = [0.5, 0.75, 1, 1.25, 1.5];
-    let speedIndex = 2; // 1x
+    // Speed stepper: minus/plus move between steps. This song's default
+    // pace felt too fast, so 0.8x (20% slower) is now the starting/"normal"
+    // speed here instead of 1x — the ×/－ buttons still work the same way
+    // around that new baseline.
+    const speedSteps = [0.5, 0.65, 0.8, 1, 1.25];
+    let speedIndex = 2; // 0.8x, the new default
     const speedMinusBtn = document.getElementById('speed-minus');
     const speedPlusBtn = document.getElementById('speed-plus');
     const speedResetBtn = document.getElementById('speed-reset');
@@ -430,7 +432,7 @@
         speedIndex = Math.max(0, Math.min(speedSteps.length - 1, index));
         const rate = speedSteps[speedIndex];
         player.setPlaybackRate(rate);
-        const isNormal = rate === 1;
+        const isNormal = rate === 0.8;
         speedResetBtn.textContent = isNormal ? 'מהירות' : `×${rate}`;
         speedResetBtn.classList.toggle('is-normal', isNormal);
     }
@@ -438,6 +440,9 @@
     speedMinusBtn.addEventListener('click', () => applySpeed(speedIndex - 1));
     speedPlusBtn.addEventListener('click', () => applySpeed(speedIndex + 1));
     speedResetBtn.addEventListener('click', () => applySpeed(2));
+    // Apply the default rate right away — earlier pages never needed this
+    // because 1x already matched the <video>/YouTube element's own default.
+    applySpeed(speedIndex);
 
     // Pause/resume — becomes "play again" once the song ends.
     const playPauseBtn = document.getElementById('play-pause');
