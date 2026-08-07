@@ -574,7 +574,18 @@
     // repeats of the same 12-note phrase.
     const songTimes = [0.76, 1.25, 1.70, 2.24, 2.84, 3.48, 4.12, 5.30, 5.85, 6.45, 7.00, 7.58, 9.61, 10.24, 10.74, 11.32, 11.89, 12.47, 13.01, 14.24, 14.80, 15.42, 16.00, 16.69];
     const songLetters = ['C', 'C', 'C', 'G', 'A', 'A', 'G', 'E', 'E', 'D', 'D', 'C', 'C', 'C', 'C', 'G', 'A', 'A', 'G', 'E', 'E', 'D', 'D', 'C'];
-    const songNotes = songTimes.map((t, i) => ({ time: t, note: songLetters[i] + '4' }));
+    // Sol and La sit an octave lower than the rest of the scale in the
+    // actual recording — the physical/visual key stays exactly where a
+    // do-re-mi-fa-sol-la-si key always is, only the underlying sample and
+    // expected pitch shift down for these two.
+    const noteOctaveOverride = { G: 3, A: 3 };
+    function octaveForLetter(letter) {
+        return noteOctaveOverride[letter] || 4;
+    }
+    const songNotes = songTimes.map((t, i) => {
+        const letter = songLetters[i];
+        return { time: t, note: letter + octaveForLetter(letter) };
+    });
 
     const songNoteTotals = {};
     songNotes.forEach(n => { songNoteTotals[n.note] = (songNoteTotals[n.note] || 0) + 1; });
@@ -628,9 +639,11 @@
     const sampleUrls = {};
     octaves.forEach(octave => {
         notes.forEach(note => {
-            const fullNote = note + octave;
+            const isBlack = note.includes('#');
+            const actualOctave = (!isBlack && noteOctaveOverride[note]) ? noteOctaveOverride[note] : octave;
+            const fullNote = note + actualOctave;
             if (knownBadSamples.has(fullNote)) return;
-            sampleUrls[fullNote] = noteToFile(note, octave);
+            sampleUrls[fullNote] = noteToFile(note, actualOctave);
         });
     });
 
@@ -664,7 +677,8 @@
     octaves.forEach(octave => {
         notes.forEach(note => {
             const isBlack = note.includes('#');
-            const fullNote = note + octave;
+            const actualOctave = (!isBlack && noteOctaveOverride[note]) ? noteOctaveOverride[note] : octave;
+            const fullNote = note + actualOctave;
             const freq = noteNameToFreq(fullNote);
             const key = document.createElement('div');
             key.className = `key ${isBlack ? 'black-key' : 'white-key'}`;
