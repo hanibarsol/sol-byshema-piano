@@ -419,11 +419,12 @@
     });
 
     // Speed stepper: minus/plus move between steps. This song's default
-    // pace felt too fast, so 0.8x (20% slower) is now the starting/"normal"
-    // speed here instead of 1x — the ×/－ buttons still work the same way
-    // around that new baseline.
-    const speedSteps = [0.5, 0.65, 0.8, 1, 1.25];
-    let speedIndex = 2; // 0.8x, the new default
+    // pace felt too fast — first dropped to 0.8x (20% slower), then another
+    // 25 points slower still, landing the starting/"normal" speed at 0.55x
+    // instead of 1x. The ×/－ buttons still work the same way around that
+    // new baseline.
+    const speedSteps = [0.25, 0.4, 0.55, 0.7, 0.85];
+    let speedIndex = 2; // 0.55x, the new default
     const speedMinusBtn = document.getElementById('speed-minus');
     const speedPlusBtn = document.getElementById('speed-plus');
     const speedResetBtn = document.getElementById('speed-reset');
@@ -432,7 +433,7 @@
         speedIndex = Math.max(0, Math.min(speedSteps.length - 1, index));
         const rate = speedSteps[speedIndex];
         player.setPlaybackRate(rate);
-        const isNormal = rate === 0.8;
+        const isNormal = rate === 0.55;
         speedResetBtn.textContent = isNormal ? 'מהירות' : `×${rate}`;
         speedResetBtn.classList.toggle('is-normal', isNormal);
     }
