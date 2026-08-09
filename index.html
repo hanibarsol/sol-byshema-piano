@@ -27,53 +27,6 @@
 
         #start-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.85); color: white; display: flex; justify-content: center; align-items: center; z-index: 100; cursor: pointer; font-size: 22px; text-align: center; padding: 20px; box-sizing: border-box; }
 
-        /* Whether the song's own recorded audio is heard, independent of
-           the piano's own sound. Off by default — a child pressing keys
-           along with the falling characters while the recording also plays
-           reads as "playing along with the recording," not "practicing" —
-           the same reasoning behind muting the video by default on every
-           other lesson page. */
-        #audio-toggle-wrap {
-            touch-action: auto;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 6px;
-            padding: 8px 10px;
-            background: #000;
-            cursor: pointer;
-        }
-        #audio-toggle {
-            touch-action: auto;
-            width: 40px; height: 40px;
-            flex: 0 0 auto;
-            border-radius: 50%;
-            border: 1px solid rgba(255,255,255,0.12);
-            background: #262626;
-            color: rgba(255,255,255,0.35);
-            font-size: 17px;
-            cursor: pointer;
-            display: flex; align-items: center; justify-content: center;
-        }
-        #audio-toggle.active {
-            background: radial-gradient(circle at 35% 30%, #4fa3ff, #1a5fc4 75%);
-            border-color: #7ec4ff;
-            color: #fff;
-            box-shadow: 0 0 8px 2px rgba(79,163,255,0.75);
-        }
-        #audio-toggle-label {
-            touch-action: auto;
-            border: 1px solid rgba(255,255,255,0.12);
-            border-radius: 20px;
-            padding: 9px 20px;
-            font-size: 15px;
-            font-family: Arial, sans-serif;
-            background: #262626;
-            color: rgba(255,255,255,0.6);
-            cursor: pointer;
-            white-space: nowrap;
-        }
-
         /* "אני רוצה לנסות לבד" — an alternate, self-paced view: instead of
            notes falling with the video/audio driving the timing, every note
            in the song sits laid out left-to-right on a music staff, at its
@@ -456,10 +409,6 @@
     <!-- Audio-only lesson, hosted permanently — no visible video, black
          background throughout, only the piano/lane/characters. -->
     <video id="song-audio" src="song.mp4" style="display:none" playsinline></video>
-    <div id="audio-toggle-wrap">
-        <button id="audio-toggle" title="שמע השיר המוקלט">🔇</button>
-        <span id="audio-toggle-label">חני, תנגני איתי</span>
-    </div>
     <div id="speed-bar">
         <button id="play-pause" class="speed-step-btn">⏸</button>
         <button id="speed-minus" class="speed-step-btn">－</button>
@@ -534,18 +483,9 @@
         getPlayerState: () => audioEl.ended ? PlayerState.ENDED : (audioEl.paused ? PlayerState.PAUSED : PlayerState.PLAYING),
     };
 
-    // Off by default — nothing plays unasked; opting in to hear the
-    // recording alongside the piano is a deliberate choice, same as every
-    // other lesson page.
-    let audioOn = false;
+    // Always muted — this is Hani's own playing, and hearing it at the same
+    // time as the child's own piano just reads as confusing noise.
     audioEl.muted = true;
-    const audioToggleBtn = document.getElementById('audio-toggle');
-    audioToggleBtn.addEventListener('click', () => {
-        audioOn = !audioOn;
-        audioEl.muted = !audioOn;
-        audioToggleBtn.classList.toggle('active', audioOn);
-        audioToggleBtn.textContent = audioOn ? '🔊' : '🔇';
-    });
 
     startScreen.addEventListener('click', async () => {
         await Tone.start();
@@ -852,6 +792,7 @@
     const activeTiles = new Map();
 
     function renderFallingLane(t) {
+        if (soloMode) return;
         const laneH = noteLane.clientHeight;
         if (!laneH) return;
         const whiteWpx = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--white-w')) || 0;
@@ -942,6 +883,7 @@
             }
             const note = document.createElement('div');
             note.className = 'staff-note';
+            if (i < soloIdx) note.classList.add('done');
             note.style.left = x + 'px';
             note.style.top = y + 'px';
             note.style.width = noteSize + 'px';
@@ -986,6 +928,8 @@
             // into a fresh "לנסות לבד" attempt.
             Object.values(keyByNote).forEach(el => el.classList.remove('due'));
             resetKeyFills();
+            activeTiles.forEach(tile => tile.remove());
+            activeTiles.clear();
         }
         sizeKeys();
     });
@@ -1030,7 +974,7 @@
         document.documentElement.style.setProperty('--lane-h', laneH + 'px');
         document.documentElement.style.setProperty('--staff-h', laneH + 'px');
     }
-    window.addEventListener('resize', sizeKeys);
+    window.addEventListener('resize', () => { sizeKeys(); if (soloMode) buildStaff(); });
     sizeKeys();
     window.addEventListener('load', sizeKeys);
     requestAnimationFrame(sizeKeys);
